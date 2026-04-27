@@ -1,5 +1,5 @@
 import '@/styles/sii-design.css'
 
-export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return <div className="sii-root">{children}</div>
 }
