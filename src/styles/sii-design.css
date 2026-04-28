@@ -209,7 +209,13 @@
   padding: 22px 14px;
   display: flex; flex-direction: column;
   position: sticky; top: 0; height: 100vh;
-  overflow-y: auto;
+  overflow: hidden;
+}
+.sidebar-scroll {
+  flex: 1; min-height: 0;
+  overflow-y: auto; overflow-x: hidden;
+  display: flex; flex-direction: column;
+  padding-bottom: 4px;
 }
 .sidebar .brand-mark { padding: 4px 8px 18px; border-bottom: 1px solid rgba(184,151,91,.18); }
 .sidebar .brand-mark .b1 { font-size: 15px; }
@@ -503,7 +509,7 @@ input[type="range"]::-moz-range-thumb {
   background: var(--green-900); padding: 22px 14px;
   display: flex; flex-direction: column; z-index: 50;
   transform: translateX(-110%); transition: transform .25s;
-  overflow-y: auto;
+  overflow: hidden;
 }
 .drawer.on { transform: translateX(0); }
 .mobile-nav-btn { display: none; }

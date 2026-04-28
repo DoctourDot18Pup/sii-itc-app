@@ -51,49 +51,51 @@ export default function Sidebar({ onClose, periodo, semestre }: SidebarProps) {
         </div>
       </div>
 
-      <nav className="nav">
-        {GROUPS.map(g => (
-          <div key={g.id}>
-            <div className="nav-section">{g.label}</div>
-            {NAV.filter(n => n.group === g.id).map(({ id, label, Icon, tag }) => {
-              const active = pathname === id || (id !== '/dashboard' && pathname.startsWith(id))
-              return (
-                <Link
-                  key={id}
-                  href={id}
-                  className={active ? 'active' : ''}
-                  onClick={onClose}
-                >
-                  <span className="ico"><Icon size={16} /></span>
-                  <span style={{ flex: 1 }}>{label}</span>
-                  {tag && <span className="badge gold" style={{ fontSize: 10 }}>{tag}</span>}
-                  {active && <IcoChev size={14} style={{ opacity: 0.5 }} />}
-                </Link>
-              )
-            })}
+      <div className="sidebar-scroll">
+        <nav className="nav">
+          {GROUPS.map(g => (
+            <div key={g.id}>
+              <div className="nav-section">{g.label}</div>
+              {NAV.filter(n => n.group === g.id).map(({ id, label, Icon, tag }) => {
+                const active = pathname === id || (id !== '/dashboard' && pathname.startsWith(id))
+                return (
+                  <Link
+                    key={id}
+                    href={id}
+                    className={active ? 'active' : ''}
+                    onClick={onClose}
+                  >
+                    <span className="ico"><Icon size={16} /></span>
+                    <span style={{ flex: 1 }}>{label}</span>
+                    {tag && <span className="badge gold" style={{ fontSize: 10 }}>{tag}</span>}
+                    {active && <IcoChev size={14} style={{ opacity: 0.5 }} />}
+                  </Link>
+                )
+              })}
+            </div>
+          ))}
+        </nav>
+
+        {periodo && (
+          <div className="sidebar-footer-card" style={{ marginTop: 'auto' }}>
+            <strong>Periodo activo</strong>
+            {periodo}{semestre ? ` · Sem. ${semestre}` : ''}
           </div>
-        ))}
-      </nav>
+        )}
 
-      {periodo && (
-        <div className="sidebar-footer-card" style={{ marginTop: 'auto' }}>
-          <strong>Periodo activo</strong>
-          {periodo}{semestre ? ` · Sem. ${semestre}` : ''}
-        </div>
-      )}
-
-      <button
-        onClick={handleLogout}
-        style={{
-          display: 'flex', alignItems: 'center', gap: 10,
-          padding: '10px 12px', marginTop: 8,
-          color: 'rgba(243,234,219,.7)', background: 'transparent',
-          border: 0, fontSize: 13.5, borderRadius: 8, width: '100%', cursor: 'pointer',
-        }}
-      >
-        <span className="ico" style={{ color: 'var(--gold-400)' }}><IcoLogOut size={16} /></span>
-        Cerrar sesión
-      </button>
+        <button
+          onClick={handleLogout}
+          style={{
+            display: 'flex', alignItems: 'center', gap: 10,
+            padding: '10px 12px', marginTop: 8,
+            color: 'rgba(243,234,219,.7)', background: 'transparent',
+            border: 0, fontSize: 13.5, borderRadius: 8, width: '100%', cursor: 'pointer',
+          }}
+        >
+          <span className="ico" style={{ color: 'var(--gold-400)' }}><IcoLogOut size={16} /></span>
+          Cerrar sesión
+        </button>
+      </div>
     </>
   )
 }
