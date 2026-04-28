@@ -6,6 +6,7 @@ import Sidebar from '@/components/layout/Sidebar'
 import { IcoMenu, IcoSearch, IcoBell, IcoRefresh } from '@/components/ui/Icons'
 import { getToken, clearToken, startInactivityTimer } from '@/lib/auth/session'
 import { getEstudiante } from '@/lib/api/estudiante'
+import { StudentContext } from '@/lib/context/StudentContext'
 import type { EstudianteData } from '@/types/api'
 
 interface Props {
@@ -91,7 +92,9 @@ export default function DashboardShell({ crumb, children }: Props) {
           </div>
         </div>
 
-        {children}
+            <StudentContext.Provider value={{ student }}>
+          {children}
+        </StudentContext.Provider>
       </main>
     </div>
   )

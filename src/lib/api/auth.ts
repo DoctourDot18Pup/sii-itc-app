@@ -1,6 +1,8 @@
 import type { LoginResponse } from '@/types/api'
 
-const BASE_URL = 'https://sii.celaya.tecnm.mx/api'
+const BASE_URL = typeof window === 'undefined'
+  ? `${process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'}/api/sii`
+  : '/api/sii'
 
 export async function login(email: string, password: string): Promise<string> {
   let response: Response
@@ -15,19 +17,16 @@ export async function login(email: string, password: string): Promise<string> {
     throw new Error('Error de conexión. Verifica tu internet.')
   }
 
-  if (response.status === 401 || response.status === 422) {
-    throw new Error('Credenciales incorrectas')
-  }
-
-  if (!response.ok) {
-    throw new Error('Error inesperado. Intenta de nuevo.')
-  }
-
   let data: LoginResponse
   try {
     data = await response.json()
   } catch {
     throw new Error('Error inesperado. Intenta de nuevo.')
+  }
+
+  // La API siempre retorna HTTP 200; el estado real está en data.status
+  if (data.status === 401 || data.status === 422 || !data.message) {
+    throw new Error('Correo o contraseña incorrectos.')
   }
 
   const token = data?.message?.login?.token

@@ -5,7 +5,11 @@ import type {
   HorariosPeriodo,
 } from '@/types/api'
 
-const BASE_URL = 'https://sii.celaya.tecnm.mx/api'
+// En browser: URL relativa → el rewrite de Next.js la redirige al API real (sin CORS)
+// En servidor (Vercel): URL absoluta apuntando al mismo host para seguir el rewrite
+const BASE_URL = typeof window === 'undefined'
+  ? `${process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'}/api/sii`
+  : '/api/sii'
 
 async function apiFetch(endpoint: string, token: string): Promise<unknown> {
   let response: Response

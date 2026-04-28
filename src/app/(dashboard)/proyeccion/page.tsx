@@ -5,8 +5,9 @@ import { useRouter } from 'next/navigation'
 import DashboardShell from '@/components/layout/DashboardShell'
 import { IcoTarget, IcoAward } from '@/components/ui/Icons'
 import { getToken } from '@/lib/auth/session'
-import { getCalificaciones, getEstudiante } from '@/lib/api/estudiante'
-import type { CalificacionesPeriodo, EstudianteData } from '@/types/api'
+import { getCalificaciones } from '@/lib/api/estudiante'
+import { useStudent } from '@/lib/context/StudentContext'
+import type { CalificacionesPeriodo } from '@/types/api'
 
 function colorFor(n: number): string {
   if (n >= 90) return 'good'
@@ -16,19 +17,18 @@ function colorFor(n: number): string {
 
 export default function ProyeccionPage() {
   const router = useRouter()
+  const { student } = useStudent()
   const [loading, setLoading] = useState(true)
   const [periodos, setPeriodos] = useState<CalificacionesPeriodo[]>([])
-  const [student, setStudent] = useState<EstudianteData | null>(null)
   const [objetivo, setObjetivo] = useState<number>(85)
   const [notas, setNotas] = useState<Record<string, number | ''>>({})
 
   useEffect(() => {
     const token = getToken()
     if (!token) { router.replace('/login'); return }
-    Promise.all([getCalificaciones(token), getEstudiante(token)])
-      .then(([cals, est]) => {
+    getCalificaciones(token)
+      .then(cals => {
         setPeriodos(cals)
-        setStudent(est)
         const initial: Record<string, number | ''> = {}
         const actual = cals[0]
         if (actual) {
