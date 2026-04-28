@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import Image from 'next/image'
-import { useRef, useEffect } from 'react'
+
 import {
   IcoHome, IcoUser, IcoGrade, IcoKardex, IcoClock,
   IcoCalendar, IcoTarget, IcoLogOut, IcoChev,
@@ -35,12 +35,6 @@ interface SidebarProps {
 export default function Sidebar({ onClose, periodo, semestre }: SidebarProps) {
   const pathname = usePathname()
   const router = useRouter()
-  const scrollRef = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    if (scrollRef.current) scrollRef.current.scrollTop = 0
-  }, [pathname])
-
   function handleLogout() {
     clearToken()
     document.cookie = 'sii_auth_hint=; path=/; max-age=0'
@@ -57,7 +51,7 @@ export default function Sidebar({ onClose, periodo, semestre }: SidebarProps) {
         </div>
       </div>
 
-      <div className="sidebar-scroll" ref={scrollRef}>
+      <div className="sidebar-scroll">
         <nav className="nav">
           {GROUPS.map(g => (
             <div key={g.id}>

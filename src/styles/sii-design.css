@@ -209,15 +209,11 @@
   color: var(--cream);
   padding: 22px 14px;
   display: flex; flex-direction: column;
-  position: sticky; top: 0; height: 100vh;
-  overflow: hidden;
+  min-height: 100vh;
 }
 .sidebar-scroll {
-  flex: 1; min-height: 0;
-  overflow-y: auto; overflow-x: hidden;
+  flex: 1;
   display: flex; flex-direction: column;
-  padding-bottom: 4px;
-  scroll-behavior: instant;
 }
 .sidebar .brand-mark { padding: 4px 8px 18px; border-bottom: 1px solid rgba(184,151,91,.18); }
 .sidebar .brand-mark .b1 { font-size: 15px; }
