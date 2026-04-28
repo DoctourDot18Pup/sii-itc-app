@@ -7,6 +7,7 @@ import { IcoMenu, IcoSearch, IcoBell, IcoRefresh } from '@/components/ui/Icons'
 import { getToken, clearToken, startInactivityTimer } from '@/lib/auth/session'
 import { getEstudiante } from '@/lib/api/estudiante'
 import { StudentContext } from '@/lib/context/StudentContext'
+import { eventosProximos } from '@/lib/data/calendario-academico'
 import type { EstudianteData } from '@/types/api'
 
 interface Props {
@@ -40,6 +41,8 @@ export default function DashboardShell({ crumb, children }: Props) {
     })
     return cleanup
   }, [router])
+
+  const proximoCount = eventosProximos(7).filter(e => e.importante).length
 
   const initials = student
     ? `${student.persona.charAt(0)}${student.persona.split(' ')[1]?.charAt(0) ?? ''}`
@@ -81,7 +84,24 @@ export default function DashboardShell({ crumb, children }: Props) {
             <span className="search-icon"><IcoSearch size={14} /></span>
             <input className="sii-input" placeholder="Buscar materia, docente, aula…" />
           </div>
-          <button className="iconbtn" title="Notificaciones"><IcoBell size={15} /></button>
+          <button
+            className="iconbtn"
+            title="Notificaciones"
+            style={{ position: 'relative' }}
+            onClick={() => window.location.href = '/calendario'}
+          >
+            <IcoBell size={15} />
+            {proximoCount > 0 && (
+              <span style={{
+                position: 'absolute', top: 2, right: 2,
+                width: 16, height: 16, borderRadius: 8,
+                background: '#dc2626', color: '#fff',
+                fontSize: 9, fontWeight: 700,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                lineHeight: 1,
+              }}>{proximoCount > 9 ? '9+' : proximoCount}</span>
+            )}
+          </button>
           <button className="iconbtn" title="Sincronizar"><IcoRefresh size={15} /></button>
           <div className="userchip">
             <div className="av">{initials}</div>
