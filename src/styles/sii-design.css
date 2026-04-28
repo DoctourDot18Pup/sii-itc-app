@@ -44,6 +44,7 @@
   font-size: 14px;
   line-height: 1.45;
   min-height: 100vh;
+  overflow-x: hidden;
 }
 .sii-root h1, .sii-root h2, .sii-root h3, .sii-root h4 {
   margin: 0; font-weight: 700; letter-spacing: -0.01em;
@@ -248,7 +249,7 @@
 .sidebar-footer-card strong { color: #fff; display: block; margin-bottom: 2px; }
 
 /* ── Main content ── */
-.main { padding: 0 36px 56px; }
+.main { padding: 0 36px 56px; min-width: 0; }
 .topbar {
   position: sticky; top: 0; z-index: 5;
   background: rgba(251,249,243,.9);
@@ -320,10 +321,11 @@
 
 /* ── Grids ── */
 .sii-grid { display: grid; gap: 16px; }
-.g-3 { grid-template-columns: repeat(3, 1fr); }
-.g-4 { grid-template-columns: repeat(4, 1fr); }
-.g-2 { grid-template-columns: repeat(2, 1fr); }
+.g-4 { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
+.g-3 { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }
+.g-2 { grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); }
 .g-2-1 { grid-template-columns: 2fr 1fr; }
+.sii-grid > * { min-width: 0; }
 
 /* ── Stat tiles ── */
 .stat {
@@ -519,7 +521,6 @@ input[type="range"]::-moz-range-thumb {
 /* ── Responsive — tablet (≤ 1024px) ── */
 @media (max-width: 1024px) {
   .search-wrap { width: 200px; }
-  .g-4 { grid-template-columns: repeat(2, 1fr); }
 }
 
 /* ── Responsive — mobile (≤ 768px) ── */
@@ -547,8 +548,7 @@ input[type="range"]::-moz-range-thumb {
   .pagehead h1 { font-size: 24px; }
   .pagehead .actions { width: 100%; flex-wrap: wrap; }
 
-  /* Grids */
-  .g-2, .g-3, .g-4 { grid-template-columns: 1fr; }
+  /* Grids — auto-fill ya maneja el colapso, solo forzar 1col en muy pequeño */
   .g-2-1 { grid-template-columns: 1fr; }
 
   /* Stats */
@@ -579,7 +579,6 @@ input[type="range"]::-moz-range-thumb {
   .topbar { padding-left: 12px; padding-right: 12px; margin: 0 -12px 16px; }
   .pagehead h1 { font-size: 22px; }
   .stat .val { font-size: 22px; }
-  .g-2 { grid-template-columns: 1fr; }
   .login-form-wrap { padding: 24px 16px; }
   .btn { height: 42px; font-size: 13px; }
   .sii-input { height: 42px; }
