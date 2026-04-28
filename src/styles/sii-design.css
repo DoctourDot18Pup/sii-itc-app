@@ -201,7 +201,8 @@
   display: grid;
   grid-template-columns: 248px 1fr;
   min-height: 100vh;
-  background: var(--paper);
+  /* Pinta la columna del sidebar de verde para toda la altura de la página */
+  background: linear-gradient(to right, var(--green-900) 248px, var(--paper) 248px);
 }
 .sidebar {
   background: var(--green-900);
