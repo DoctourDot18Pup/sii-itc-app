@@ -172,36 +172,38 @@ export default function KardexPage() {
                 />
               </button>
               {abierto && (
-                <table className="tbl">
-                  <thead>
-                    <tr>
-                      <th>Materia</th>
-                      <th>Clave</th>
-                      <th>Periodo</th>
-                      <th style={{ textAlign: 'right' }}>Créditos</th>
-                      <th style={{ textAlign: 'right' }}>Calificación</th>
-                      <th style={{ textAlign: 'right' }}>Estado</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {materias.map((m, i) => (
-                      <tr key={i}>
-                        <td><b style={{ fontSize: 13 }}>{m.nombre_materia}</b></td>
-                        <td className="muted" style={{ fontSize: 12 }}>{m.clave_materia}</td>
-                        <td className="muted" style={{ fontSize: 12 }}>{m.periodo}</td>
-                        <td className="num">{m.creditos}</td>
-                        <td className="num">
-                          <span className={`badge ${colorFor(m.calificacion)}`}>{m.calificacion || '—'}</span>
-                        </td>
-                        <td className="num">
-                          <span className={`badge ${Number(m.calificacion) >= 70 ? 'good' : 'bad'}`}>
-                            {Number(m.calificacion) >= 70 ? 'Aprobado' : 'Reprobado'}
-                          </span>
-                        </td>
+                <div style={{ overflowX: 'auto' }}>
+                  <table className="tbl" style={{ minWidth: 520 }}>
+                    <thead>
+                      <tr>
+                        <th>Materia</th>
+                        <th>Clave</th>
+                        <th>Periodo</th>
+                        <th style={{ textAlign: 'right' }}>Créditos</th>
+                        <th style={{ textAlign: 'right' }}>Calificación</th>
+                        <th style={{ textAlign: 'right' }}>Estado</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      {materias.map((m, i) => (
+                        <tr key={i}>
+                          <td><b style={{ fontSize: 13 }}>{m.nombre_materia}</b></td>
+                          <td className="muted" style={{ fontSize: 12 }}>{m.clave_materia}</td>
+                          <td className="muted" style={{ fontSize: 12 }}>{m.periodo}</td>
+                          <td className="num">{m.creditos}</td>
+                          <td className="num">
+                            <span className={`badge ${colorFor(m.calificacion)}`}>{m.calificacion || '—'}</span>
+                          </td>
+                          <td className="num">
+                            <span className={`badge ${Number(m.calificacion) >= 70 ? 'good' : 'bad'}`}>
+                              {Number(m.calificacion) >= 70 ? 'Aprobado' : 'Reprobado'}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               )}
             </div>
           )

@@ -142,7 +142,7 @@ export default function HorariosPage() {
       {/* Semana view */}
       {vista === 'semana' && (
         <div className="card" style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 600 }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 780 }}>
             <thead>
               <tr>
                 {DIAS.map(d => (
@@ -188,8 +188,8 @@ export default function HorariosPage() {
 
       {/* Lista view */}
       {vista === 'lista' && (
-        <div className="card">
-          <table className="tbl">
+        <div className="card" style={{ overflowX: 'auto' }}>
+          <table className="tbl" style={{ minWidth: 640 }}>
             <thead>
               <tr>
                 <th>Materia</th>

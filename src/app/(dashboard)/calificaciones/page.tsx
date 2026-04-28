@@ -186,8 +186,8 @@ export default function CalificacionesPage() {
 
       {/* Table view */}
       {vista === 'tabla' && (
-        <div className="card">
-          <table className="tbl">
+        <div className="card" style={{ overflowX: 'auto' }}>
+          <table className="tbl" style={{ minWidth: 560 }}>
             <thead>
               <tr>
                 <th>Materia</th>
