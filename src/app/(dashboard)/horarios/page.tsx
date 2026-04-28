@@ -6,6 +6,7 @@ import DashboardShell from '@/components/layout/DashboardShell'
 import { IcoClock, IcoBook } from '@/components/ui/Icons'
 import { getToken } from '@/lib/auth/session'
 import { getHorarios } from '@/lib/api/estudiante'
+import { useStudent } from '@/lib/context/StudentContext'
 import type { HorariosPeriodo, HorarioItem } from '@/types/api'
 
 const DIAS = ['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'] as const
@@ -28,6 +29,7 @@ function getSalon(item: HorarioItem, dia: typeof DIAS[number]): string | null {
 export default function HorariosPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(true)
+  const { searchQuery } = useStudent()
   const [periodos, setPeriodos] = useState<HorariosPeriodo[]>([])
   const [periodoIdx, setPeriodoIdx] = useState(0)
   const [vista, setVista] = useState<'semana' | 'lista'>('semana')
@@ -41,7 +43,18 @@ export default function HorariosPage() {
       .finally(() => setLoading(false))
   }, [router])
 
-  const periodo = periodos[periodoIdx]
+  const periodoRaw = periodos[periodoIdx]
+  const periodo = periodoRaw
+    ? {
+        ...periodoRaw,
+        horario: searchQuery
+          ? periodoRaw.horario.filter(h =>
+              h.nombre_materia.toLowerCase().includes(searchQuery.toLowerCase()) ||
+              h.clave_materia.toLowerCase().includes(searchQuery.toLowerCase())
+            )
+          : periodoRaw.horario,
+      }
+    : undefined
 
   if (loading) {
     return (

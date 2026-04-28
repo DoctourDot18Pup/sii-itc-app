@@ -5,9 +5,15 @@ import type { EstudianteData } from '@/types/api'
 
 interface StudentContextValue {
   student: EstudianteData | null
+  searchQuery: string
+  setSearchQuery: (q: string) => void
 }
 
-export const StudentContext = createContext<StudentContextValue>({ student: null })
+export const StudentContext = createContext<StudentContextValue>({
+  student: null,
+  searchQuery: '',
+  setSearchQuery: () => {},
+})
 
 export function useStudent() {
   return useContext(StudentContext)

@@ -22,15 +22,21 @@ async function apiFetch(endpoint: string, token: string): Promise<unknown> {
     throw new Error('NETWORK_ERROR')
   }
 
-  if (response.status === 401) {
-    throw new Error('TOKEN_EXPIRED')
-  }
+  // La API puede retornar HTTP 401 en endpoints protegidos
+  if (response.status === 401) throw new Error('TOKEN_EXPIRED')
+  if (!response.ok) throw new Error('NETWORK_ERROR')
 
-  if (!response.ok) {
+  let json: { status?: number; data?: unknown }
+  try {
+    json = await response.json()
+  } catch {
     throw new Error('NETWORK_ERROR')
   }
 
-  return response.json()
+  // Algunos endpoints retornan HTTP 200 con status 401 en el body
+  if (json?.status === 401) throw new Error('TOKEN_EXPIRED')
+
+  return json
 }
 
 export async function getEstudiante(token: string): Promise<EstudianteData> {

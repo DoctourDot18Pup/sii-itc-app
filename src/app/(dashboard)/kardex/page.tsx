@@ -6,6 +6,7 @@ import DashboardShell from '@/components/layout/DashboardShell'
 import { IcoKardex, IcoAward, IcoBook, IcoChev } from '@/components/ui/Icons'
 import { getToken } from '@/lib/auth/session'
 import { getKardex } from '@/lib/api/estudiante'
+import { useStudent } from '@/lib/context/StudentContext'
 import type { KardexData, KardexItem } from '@/types/api'
 
 function colorFor(cal: string): string {
@@ -18,6 +19,7 @@ function colorFor(cal: string): string {
 
 export default function KardexPage() {
   const router = useRouter()
+  const { searchQuery } = useStudent()
   const [loading, setLoading] = useState(true)
   const [kardex, setKardex] = useState<KardexData | null>(null)
   const [abiertos, setAbiertos] = useState<Set<number>>(new Set([1]))
@@ -37,14 +39,16 @@ export default function KardexPage() {
 
   const porSemestre = useMemo(() => {
     if (!kardex) return []
+    const q = searchQuery.toLowerCase()
     const map = new Map<number, KardexItem[]>()
     for (const item of kardex.kardex) {
+      if (q && !item.nombre_materia.toLowerCase().includes(q) && !item.clave_materia.toLowerCase().includes(q)) continue
       const sem = item.semestre
       if (!map.has(sem)) map.set(sem, [])
       map.get(sem)!.push(item)
     }
     return Array.from(map.entries()).sort((a, b) => a[0] - b[0])
-  }, [kardex])
+  }, [kardex, searchQuery])
 
   const stats = useMemo(() => {
     if (!kardex) return { aprobadas: 0, reprobadas: 0, promedio: '—', creditos: 0 }

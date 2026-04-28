@@ -6,6 +6,7 @@ import DashboardShell from '@/components/layout/DashboardShell'
 import { IcoGrade, IcoAward, IcoBook, IcoSearch } from '@/components/ui/Icons'
 import { getToken } from '@/lib/auth/session'
 import { getCalificaciones } from '@/lib/api/estudiante'
+import { useStudent } from '@/lib/context/StudentContext'
 import type { CalificacionesPeriodo } from '@/types/api'
 
 function colorFor(cal: string | null): string {
@@ -27,11 +28,12 @@ function desempeno(cal: string | null): string {
 
 export default function CalificacionesPage() {
   const router = useRouter()
+  const { searchQuery, setSearchQuery } = useStudent()
   const [loading, setLoading] = useState(true)
   const [periodos, setPeriodos] = useState<CalificacionesPeriodo[]>([])
   const [periodoIdx, setPeriodoIdx] = useState(0)
   const [vista, setVista] = useState<'tabla' | 'tarjetas'>('tabla')
-  const [busqueda, setBusqueda] = useState('')
+  const busqueda = searchQuery
 
   useEffect(() => {
     const token = getToken()
@@ -148,7 +150,7 @@ export default function CalificacionesPage() {
               className="sii-input"
               placeholder="Buscar materia o clave…"
               value={busqueda}
-              onChange={e => setBusqueda(e.target.value)}
+              onChange={e => setSearchQuery(e.target.value)}
             />
           </div>
           <div style={{ display: 'flex', gap: 6 }}>
@@ -157,7 +159,7 @@ export default function CalificacionesPage() {
                 key={p.periodo.clave_periodo}
                 className={`iconbtn${periodoIdx === i ? ' active' : ''}`}
                 style={periodoIdx === i ? { background: 'var(--green-900)', color: '#fff', borderColor: 'var(--green-900)' } : {}}
-                onClick={() => { setPeriodoIdx(i); setBusqueda('') }}
+                onClick={() => { setPeriodoIdx(i); setSearchQuery('') }}
               >
                 {p.periodo.descripcion_periodo}
               </button>
