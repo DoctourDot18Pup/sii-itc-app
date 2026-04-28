@@ -216,11 +216,12 @@
   overflow-y: auto; overflow-x: hidden;
   display: flex; flex-direction: column;
   padding-bottom: 4px;
+  scroll-behavior: instant;
 }
 .sidebar .brand-mark { padding: 4px 8px 18px; border-bottom: 1px solid rgba(184,151,91,.18); }
 .sidebar .brand-mark .b1 { font-size: 15px; }
 .sidebar .brand-mark .b2 { font-size: 10px; }
-.nav { margin-top: 16px; display: flex; flex-direction: column; gap: 2px; flex: 1; }
+.nav { margin-top: 16px; display: flex; flex-direction: column; gap: 2px; }
 .nav-section {
   color: rgba(243,234,219,.45);
   font-size: 10px; letter-spacing: .16em; text-transform: uppercase;
