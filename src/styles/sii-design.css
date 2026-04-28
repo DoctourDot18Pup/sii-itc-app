@@ -536,7 +536,7 @@ input[type="range"]::-moz-range-thumb {
   .login-form h2 { font-size: 26px; }
 
   /* Layout */
-  .layout { grid-template-columns: 1fr; }
+  .layout { grid-template-columns: 1fr; background: var(--paper); }
   .sidebar { display: none; }
   .mobile-nav-btn { display: inline-flex !important; }
   .main { padding: 0 14px 40px; }
