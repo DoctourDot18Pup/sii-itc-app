@@ -6,7 +6,7 @@ import Image from 'next/image'
 
 import {
   IcoHome, IcoUser, IcoGrade, IcoKardex, IcoClock,
-  IcoCalendar, IcoTarget, IcoLogOut, IcoChev,
+  IcoCalendar, IcoTarget, IcoLogOut, IcoChev, IcoBarChart,
 } from '@/components/ui/Icons'
 import { clearToken } from '@/lib/auth/session'
 
@@ -18,6 +18,7 @@ const NAV = [
   { id: '/horarios',       label: 'Horario',            Icon: IcoClock,    group: 'academico' },
   { id: '/calendario',     label: 'Calendario',         Icon: IcoCalendar, group: 'academico' },
   { id: '/proyeccion',     label: 'Proyección',         Icon: IcoTarget,   group: 'herramientas', tag: 'Nuevo' },
+  { id: '/analisis',       label: 'Análisis',           Icon: IcoBarChart, group: 'herramientas' },
 ]
 
 const GROUPS = [

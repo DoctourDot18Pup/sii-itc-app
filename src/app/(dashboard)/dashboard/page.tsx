@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import DashboardShell from '@/components/layout/DashboardShell'
-import { IcoAward, IcoBook, IcoGrade, IcoUser, IcoDownload, IcoChev, IcoTarget, IcoArrow } from '@/components/ui/Icons'
+import { IcoAward, IcoBook, IcoGrade, IcoUser, IcoDownload, IcoChev, IcoTarget, IcoArrow, IcoBarChart } from '@/components/ui/Icons'
 import { getToken } from '@/lib/auth/session'
 import { getEstudiante, getCalificaciones, getHorarios } from '@/lib/api/estudiante'
 import type { EstudianteData, CalificacionesPeriodo, HorariosPeriodo } from '@/types/api'
@@ -119,6 +119,67 @@ export default function DashboardPage() {
       </div>
 
       <div style={{ height: 16 }} />
+
+      {/* Semáforo académico */}
+      {periodoActual && (() => {
+        const riesgo = periodoActual.materias.filter(m => {
+          const p1 = m.calificaiones.find(c => c.numero_calificacion === 1)
+          const p2 = m.calificaiones.find(c => c.numero_calificacion === 2)
+          const n1 = p1?.calificacion ? Number(p1.calificacion) : null
+          const n2 = p2?.calificacion ? Number(p2.calificacion) : null
+          return (n1 !== null && n1 < 70) || (n2 !== null && n2 < 70)
+        })
+        const advertencia = periodoActual.materias.filter(m => {
+          const p1 = m.calificaiones.find(c => c.numero_calificacion === 1)
+          const p2 = m.calificaiones.find(c => c.numero_calificacion === 2)
+          const n1 = p1?.calificacion ? Number(p1.calificacion) : null
+          const n2 = p2?.calificacion ? Number(p2.calificacion) : null
+          const enRiesgo = (n1 !== null && n1 < 70) || (n2 !== null && n2 < 70)
+          if (enRiesgo) return false
+          return (n1 !== null && n1 < 80) || (n2 !== null && n2 < 80)
+        })
+        if (riesgo.length === 0 && advertencia.length === 0) return null
+        return (
+          <div className="card card-pad" style={{ marginBottom: 16, borderLeft: `4px solid ${riesgo.length > 0 ? 'var(--red)' : 'var(--gold-500)'}` }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+              <IcoBarChart size={15} style={{ color: riesgo.length > 0 ? 'var(--red)' : 'var(--gold-500)' }} />
+              <h3 style={{ fontSize: 14 }}>Semáforo académico</h3>
+              {riesgo.length > 0 && (
+                <span className="badge bad" style={{ fontSize: 10 }}>{riesgo.length} en riesgo</span>
+              )}
+              {advertencia.length > 0 && (
+                <span className="badge warn" style={{ fontSize: 10 }}>{advertencia.length} en atención</span>
+              )}
+            </div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+              {periodoActual.materias.map(m => {
+                const p1 = m.calificaiones.find(c => c.numero_calificacion === 1)
+                const p2 = m.calificaiones.find(c => c.numero_calificacion === 2)
+                const n1 = p1?.calificacion ? Number(p1.calificacion) : null
+                const n2 = p2?.calificacion ? Number(p2.calificacion) : null
+                const enRiesgo = (n1 !== null && n1 < 70) || (n2 !== null && n2 < 70)
+                const enAtencion = !enRiesgo && ((n1 !== null && n1 < 80) || (n2 !== null && n2 < 80))
+                const bg = enRiesgo ? 'rgba(220,38,38,.08)' : enAtencion ? 'rgba(184,151,91,.10)' : 'var(--paper)'
+                const border = enRiesgo ? 'var(--red)' : enAtencion ? 'var(--gold-500)' : 'var(--line)'
+                const dot = enRiesgo ? 'var(--red)' : enAtencion ? 'var(--gold-500)' : 'var(--green-700)'
+                return (
+                  <div key={m.materia.id_grupo} style={{
+                    display: 'flex', alignItems: 'center', gap: 8,
+                    padding: '6px 12px', borderRadius: 8,
+                    background: bg, border: `1px solid ${border}`,
+                    fontSize: 12,
+                  }}>
+                    <div style={{ width: 7, height: 7, borderRadius: '50%', background: dot, flexShrink: 0 }} />
+                    <span style={{ fontWeight: 600 }}>{m.materia.nombre_materia}</span>
+                    {n1 !== null && <span className={`badge ${n1 >= 90 ? 'good' : n1 >= 70 ? 'warn' : 'bad'}`} style={{ fontSize: 10, padding: '1px 5px' }}>P1: {n1}</span>}
+                    {n2 !== null && <span className={`badge ${n2 >= 90 ? 'good' : n2 >= 70 ? 'warn' : 'bad'}`} style={{ fontSize: 10, padding: '1px 5px' }}>P2: {n2}</span>}
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )
+      })()}
 
       <div className="sii-grid g-2-1">
         {/* Calificaciones actuales */}

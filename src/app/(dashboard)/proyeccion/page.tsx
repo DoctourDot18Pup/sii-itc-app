@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import DashboardShell from '@/components/layout/DashboardShell'
-import { IcoTarget, IcoAward } from '@/components/ui/Icons'
+import { IcoTarget, IcoAward, IcoGrade, IcoBarChart } from '@/components/ui/Icons'
 import { getToken } from '@/lib/auth/session'
 import { getCalificaciones } from '@/lib/api/estudiante'
 import { useStudent } from '@/lib/context/StudentContext'
@@ -221,6 +221,80 @@ export default function ProyeccionPage() {
           )}
         </div>
       </div>
+      {/* Calculadora de titulación */}
+      {student && (() => {
+        const TOTAL_CREDITOS = 260
+        const creditosActuales = Number(student.creditos_acumulados) || 0
+        const promedioActual = Number(student.promedio_ponderado) || 0
+        const creditosRestantes = Math.max(TOTAL_CREDITOS - creditosActuales, 0)
+        const avance = Math.round((creditosActuales / TOTAL_CREDITOS) * 100)
+
+        const metas = [
+          { label: 'Mención honorífica', target: 95, color: 'var(--gold-500)', badge: 'gold' },
+          { label: 'Excelencia', target: 90, color: 'var(--green-700)', badge: 'good' },
+          { label: 'Muy bueno', target: 85, color: '#16a34a', badge: 'good' },
+          { label: 'Titulación base', target: 80, color: 'var(--gold-600)', badge: 'warn' },
+        ] as const
+
+        return (
+          <div style={{ marginTop: 24 }}>
+            <div style={{ marginBottom: 14 }}>
+              <div className="eyebrow" style={{ marginBottom: 4 }}>Calculadora</div>
+              <h2 style={{ fontSize: 18, marginBottom: 4 }}>Proyección para titulación</h2>
+              <p className="sub" style={{ fontSize: 13 }}>
+                Con {creditosActuales} créditos ({avance}% del plan) y promedio ponderado actual de{' '}
+                <strong>{student.promedio_ponderado}</strong> — ¿qué necesitas para titularte?
+              </p>
+            </div>
+
+            {creditosRestantes <= 0 ? (
+              <div className="card card-pad" style={{ textAlign: 'center' }}>
+                <IcoGrade size={28} style={{ margin: '0 auto 8px', color: 'var(--green-700)' }} />
+                <p style={{ fontWeight: 600 }}>Plan de estudios completado — estás listo para titular.</p>
+              </div>
+            ) : (
+              <div className="sii-grid g-4">
+                {metas.map(m => {
+                  const needed = creditosRestantes > 0
+                    ? (m.target * TOTAL_CREDITOS - creditosActuales * promedioActual) / creditosRestantes
+                    : promedioActual
+                  const alcanzable = needed <= 100
+                  const yaAlcanzado = promedioActual >= m.target
+                  return (
+                    <div key={m.target} className="stat" style={yaAlcanzado ? { borderColor: m.color, background: `${m.color}09` } : {}}>
+                      <div className="accent" style={{ color: m.color }}>
+                        <IcoBarChart size={14} />
+                      </div>
+                      <div className="lbl">{m.label}</div>
+                      <div className="val" style={{ color: yaAlcanzado ? m.color : alcanzable ? 'var(--ink-900)' : 'var(--red)', fontSize: 26 }}>
+                        {yaAlcanzado ? '✓' : alcanzable ? needed.toFixed(1) : '—'}
+                      </div>
+                      <div className="sub">
+                        {yaAlcanzado
+                          ? `Ya superaste ${m.target} de promedio`
+                          : alcanzable
+                          ? `promedio necesario en los ${creditosRestantes} créditos restantes`
+                          : 'No alcanzable — requeriría más de 100'}
+                      </div>
+                      {!yaAlcanzado && alcanzable && (
+                        <div style={{ marginTop: 8 }}>
+                          <span className={`badge ${m.badge}`} style={{ fontSize: 11 }}>
+                            objetivo: {m.target}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+
+            <div className="muted" style={{ fontSize: 11, marginTop: 10 }}>
+              * Cálculo basado en {TOTAL_CREDITOS} créditos totales del plan. El promedio necesario es el mínimo uniforme requerido en las materias restantes.
+            </div>
+          </div>
+        )
+      })()}
     </DashboardShell>
   )
 }
