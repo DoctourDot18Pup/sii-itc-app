@@ -6,6 +6,7 @@ import DashboardShell from '@/components/layout/DashboardShell'
 import { IcoAward, IcoBook, IcoBarChart, IcoTrendUp } from '@/components/ui/Icons'
 import { getToken } from '@/lib/auth/session'
 import { getKardex } from '@/lib/api/estudiante'
+import { useStudent } from '@/lib/context/StudentContext'
 import type { KardexData } from '@/types/api'
 
 function badgeClass(n: number) {
@@ -16,6 +17,7 @@ function badgeClass(n: number) {
 
 export default function AnalisisPage() {
   const router = useRouter()
+  const { student } = useStudent()
   const [loading, setLoading] = useState(true)
   const [kardex, setKardex] = useState<KardexData | null>(null)
 
@@ -71,10 +73,8 @@ export default function AnalisisPage() {
   const promedioGeneral = numeric.length
     ? (numeric.reduce((a, b) => a + Number(b.calificacion), 0) / numeric.length).toFixed(1)
     : '—'
-  const reprobadas = items.filter(i => {
-    const n = Number(i.calificacion)
-    return !isNaN(n) && n > 0 && n < 70
-  }).length
+  // Fuente autorizada: campo del endpoint de perfil, no derivado del kardex
+  const reprobadas = Number(student?.materias_reprobadas || 0)
 
   const mejorSem = semestres.length
     ? semestres.reduce((a, b) => a.promedio > b.promedio ? a : b)
@@ -295,20 +295,16 @@ export default function AnalisisPage() {
 
           {reprobadas > 0 && (
             <div className="card card-pad" style={{ borderColor: 'var(--red)', background: 'rgba(220,38,38,.04)' }}>
-              <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 8 }}>
+              <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 6 }}>
                 <div style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--red)', flexShrink: 0 }} />
-                <h3 style={{ fontSize: 14, color: 'var(--red)' }}>Materias reprobadas</h3>
+                <h3 style={{ fontSize: 14, color: 'var(--red)' }}>{reprobadas} materia{reprobadas !== 1 ? 's' : ''} reprobada{reprobadas !== 1 ? 's' : ''}</h3>
               </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                {items
-                  .filter(i => !isNaN(Number(i.calificacion)) && Number(i.calificacion) > 0 && Number(i.calificacion) < 70)
-                  .map((item, i) => (
-                    <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <div style={{ fontSize: 12, fontWeight: 600 }}>{item.nombre_materia}</div>
-                      <span className="badge bad">{item.calificacion}</span>
-                    </div>
-                  ))}
-              </div>
+              <p className="muted" style={{ fontSize: 12 }}>
+                Consulta el Kardex para ver el detalle por materia y periodo.
+              </p>
+              <a href="/kardex" className="link" style={{ fontSize: 12, marginTop: 6, display: 'inline-block' }}>
+                Ver Kardex →
+              </a>
             </div>
           )}
         </div>
