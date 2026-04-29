@@ -6,6 +6,7 @@ import DashboardShell from '@/components/layout/DashboardShell'
 import { IcoCalendar, IcoX, IcoBell } from '@/components/ui/Icons'
 import { getToken } from '@/lib/auth/session'
 import { getEstudiante } from '@/lib/api/estudiante'
+import { login } from '@/lib/api/auth'
 import { supabase } from '@/lib/supabase/client'
 import { useStudent } from '@/lib/context/StudentContext'
 import {
@@ -48,8 +49,15 @@ export default function CalendarioPage() {
   const [savingNotif, setSavingNotif] = useState(false)
   const [notifGuardado, setNotifGuardado] = useState(false)
   const [diaDetalle, setDiaDetalle] = useState<number | null>(null)
-  const [errorEvento, setErrorEvento] = useState<string | null>(null)
   const [errorCarga, setErrorCarga] = useState(false)
+  const [pasoModal, setPasoModal] = useState<'form' | 'confirmar'>('form')
+  const [confirmPass, setConfirmPass] = useState('')
+  const [confirmError, setConfirmError] = useState<string | null>(null)
+  const [verifyingPass, setVerifyingPass] = useState(false)
+  const [showConfirmPwd, setShowConfirmPwd] = useState(false)
+
+  const TITULO_MAX = 80
+  const DESC_MAX = 300
 
   // Usar datos del contexto si ya están disponibles
   useEffect(() => {
@@ -156,10 +164,35 @@ export default function CalendarioPage() {
     }))
   }
 
-  async function guardarEvento() {
-    if (!formEvento.titulo.trim() || !diaSeleccionado || !numeroControl) return
+  function abrirModal(dia: Date) {
+    setDiaSeleccionado(dia)
+    setFormEvento({ titulo: '', descripcion: '' })
+    setPasoModal('form')
+    setConfirmPass('')
+    setConfirmError(null)
+    setModal(true)
+  }
+
+  function avanzarAConfirmar() {
+    if (!formEvento.titulo.trim()) return
+    if (formEvento.titulo.length > TITULO_MAX || formEvento.descripcion.length > DESC_MAX) return
+    setPasoModal('confirmar')
+    setConfirmPass('')
+    setConfirmError(null)
+  }
+
+  async function verificarYGuardar() {
+    if (!confirmPass || !diaSeleccionado || !numeroControl || !emailEstudiante) return
+    setVerifyingPass(true)
+    setConfirmError(null)
+    try {
+      await login(emailEstudiante, confirmPass)
+    } catch {
+      setConfirmError('Contraseña incorrecta. Intenta de nuevo.')
+      setVerifyingPass(false)
+      return
+    }
     setSaving(true)
-    setErrorEvento(null)
     const insert: CalendarioEventoInsert = {
       titulo: formEvento.titulo.trim(),
       descripcion: formEvento.descripcion.trim() || undefined,
@@ -171,13 +204,14 @@ export default function CalendarioPage() {
       setEventosPersonales(prev => [...prev, data as CalendarioEvento].sort((a,b) => a.fecha_inicio.localeCompare(b.fecha_inicio)))
       setModal(false)
     } else {
-      setErrorEvento(
+      setConfirmError(
         error?.message?.includes('401') || error?.message?.includes('Unauthorized')
           ? 'Sin conexión con Supabase — verifica las variables de entorno en Vercel.'
           : 'No se pudo guardar el evento. Intenta de nuevo.'
       )
     }
     setSaving(false)
+    setVerifyingPass(false)
   }
 
   async function eliminarEvento(id: string) {
@@ -322,7 +356,7 @@ export default function CalendarioPage() {
                   <button
                     className="iconbtn"
                     style={{ fontSize: 11 }}
-                    onClick={() => { setDiaSeleccionado(new Date(anio, mes, diaDetalle)); setFormEvento({ titulo:'', descripcion:'' }); setModal(true) }}
+                    onClick={() => abrirModal(new Date(anio, mes, diaDetalle))}
                   >
                     + Agregar
                   </button>
@@ -515,28 +549,121 @@ export default function CalendarioPage() {
         >
           <div style={{ background: '#fff', borderRadius: 16, padding: 28, width: '90%', maxWidth: 420, boxShadow: '0 20px 60px rgba(0,0,0,.18)' }} onClick={e => e.stopPropagation()}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-              <h3 style={{ margin: 0 }}>Nuevo evento personal</h3>
+              <h3 style={{ margin: 0 }}>
+                {pasoModal === 'form' ? 'Nuevo evento personal' : 'Confirmar identidad'}
+              </h3>
               <button onClick={() => setModal(false)} style={{ background: 'none', border: 0, cursor: 'pointer', color: 'var(--ink-400)' }}><IcoX size={18} /></button>
             </div>
-            <div className="muted" style={{ marginBottom: 14, fontSize: 13 }}>
-              {diaSeleccionado?.toLocaleDateString('es-MX', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-            </div>
-            <div style={{ marginBottom: 12 }}>
-              <label style={{ fontSize: 12, fontWeight: 600, display: 'block', marginBottom: 5 }}>Título *</label>
-              <input className="sii-input" placeholder="Ej: Estudiar para parcial 1" value={formEvento.titulo} onChange={e => setFormEvento(f => ({ ...f, titulo: e.target.value }))} />
-            </div>
-            <div style={{ marginBottom: 16 }}>
-              <label style={{ fontSize: 12, fontWeight: 600, display: 'block', marginBottom: 5 }}>Descripción (opcional)</label>
-              <input className="sii-input" placeholder="Notas adicionales…" value={formEvento.descripcion} onChange={e => setFormEvento(f => ({ ...f, descripcion: e.target.value }))} />
-            </div>
-            {errorEvento && (
-              <div style={{ marginBottom: 12, padding: '10px 12px', borderRadius: 8, background: 'rgba(220,38,38,.07)', border: '1px solid rgba(220,38,38,.3)', fontSize: 12, color: '#991b1b' }}>
-                {errorEvento}
-              </div>
+
+            {pasoModal === 'form' ? (
+              <>
+                <div className="muted" style={{ marginBottom: 14, fontSize: 13 }}>
+                  {diaSeleccionado?.toLocaleDateString('es-MX', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                </div>
+                <div style={{ marginBottom: 12 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 5 }}>
+                    <label style={{ fontSize: 12, fontWeight: 600 }}>Título *</label>
+                    <span style={{ fontSize: 11, color: formEvento.titulo.length > TITULO_MAX ? 'var(--red)' : 'var(--ink-400)' }}>
+                      {formEvento.titulo.length} / {TITULO_MAX}
+                    </span>
+                  </div>
+                  <input
+                    className="sii-input"
+                    placeholder="Ej: Estudiar para parcial 1"
+                    value={formEvento.titulo}
+                    maxLength={TITULO_MAX + 20}
+                    onChange={e => setFormEvento(f => ({ ...f, titulo: e.target.value }))}
+                    style={formEvento.titulo.length > TITULO_MAX ? { borderColor: 'var(--red)' } : {}}
+                  />
+                  {formEvento.titulo.length > TITULO_MAX && (
+                    <div style={{ fontSize: 11, color: 'var(--red)', marginTop: 4 }}>
+                      El título no puede superar {TITULO_MAX} caracteres.
+                    </div>
+                  )}
+                </div>
+                <div style={{ marginBottom: 16 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 5 }}>
+                    <label style={{ fontSize: 12, fontWeight: 600 }}>Descripción (opcional)</label>
+                    <span style={{ fontSize: 11, color: formEvento.descripcion.length > DESC_MAX ? 'var(--red)' : 'var(--ink-400)' }}>
+                      {formEvento.descripcion.length} / {DESC_MAX}
+                    </span>
+                  </div>
+                  <textarea
+                    className="sii-input"
+                    placeholder="Notas adicionales…"
+                    value={formEvento.descripcion}
+                    rows={3}
+                    maxLength={DESC_MAX + 20}
+                    onChange={e => setFormEvento(f => ({ ...f, descripcion: e.target.value }))}
+                    style={{ resize: 'vertical', ...(formEvento.descripcion.length > DESC_MAX ? { borderColor: 'var(--red)' } : {}) }}
+                  />
+                  {formEvento.descripcion.length > DESC_MAX && (
+                    <div style={{ fontSize: 11, color: 'var(--red)', marginTop: 4 }}>
+                      La descripción no puede superar {DESC_MAX} caracteres.
+                    </div>
+                  )}
+                </div>
+                <button
+                  className="btn btn-primary"
+                  style={{ width: '100%' }}
+                  disabled={!formEvento.titulo.trim() || formEvento.titulo.length > TITULO_MAX || formEvento.descripcion.length > DESC_MAX}
+                  onClick={avanzarAConfirmar}
+                >
+                  Continuar →
+                </button>
+              </>
+            ) : (
+              <>
+                <div className="muted" style={{ marginBottom: 16, fontSize: 13 }}>
+                  Para confirmar la inserción del evento <b style={{ color: 'var(--ink-900)' }}>"{formEvento.titulo}"</b>, ingresa tu contraseña institucional.
+                </div>
+                <div style={{ marginBottom: 8 }}>
+                  <label style={{ fontSize: 12, fontWeight: 600, display: 'block', marginBottom: 5 }}>Contraseña SII</label>
+                  <div style={{ position: 'relative' }}>
+                    <input
+                      className="sii-input"
+                      type={showConfirmPwd ? 'text' : 'password'}
+                      placeholder="••••••••"
+                      value={confirmPass}
+                      autoFocus
+                      onChange={e => setConfirmPass(e.target.value)}
+                      onKeyDown={e => { if (e.key === 'Enter' && confirmPass) verificarYGuardar() }}
+                      style={{ paddingRight: 60 }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmPwd(v => !v)}
+                      style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 0, cursor: 'pointer', fontSize: 12, color: 'var(--ink-400)', fontWeight: 600 }}
+                    >
+                      {showConfirmPwd ? 'Ocultar' : 'Ver'}
+                    </button>
+                  </div>
+                </div>
+                {confirmError && (
+                  <div style={{ marginBottom: 12, padding: '10px 12px', borderRadius: 8, background: 'rgba(220,38,38,.07)', border: '1px solid rgba(220,38,38,.3)', fontSize: 12, color: '#991b1b' }}>
+                    {confirmError}
+                  </div>
+                )}
+                <div style={{ display: 'flex', gap: 10, marginTop: 16 }}>
+                  <button
+                    className="btn"
+                    style={{ flex: 1, fontSize: 13 }}
+                    onClick={() => setPasoModal('form')}
+                    disabled={verifyingPass || saving}
+                  >
+                    ← Volver
+                  </button>
+                  <button
+                    className="btn btn-primary"
+                    style={{ flex: 2, fontSize: 13 }}
+                    disabled={!confirmPass || verifyingPass || saving}
+                    onClick={verificarYGuardar}
+                  >
+                    {verifyingPass || saving ? <span className="sii-spinner" /> : 'Confirmar y guardar'}
+                  </button>
+                </div>
+              </>
             )}
-            <button className="btn btn-primary" style={{ width: '100%' }} disabled={saving || !formEvento.titulo.trim()} onClick={guardarEvento}>
-              {saving ? <span className="sii-spinner" /> : 'Guardar evento'}
-            </button>
           </div>
         </div>
       )}
