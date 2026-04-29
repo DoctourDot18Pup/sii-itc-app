@@ -46,6 +46,20 @@ export default function DashboardPage() {
 
   const nombre = student?.persona.split(' ')[0] ?? '…'
 
+  const HOY_MAP: Record<number, 'lunes' | 'martes' | 'miercoles' | 'jueves' | 'viernes' | 'sabado'> = {
+    1: 'lunes', 2: 'martes', 3: 'miercoles', 4: 'jueves', 5: 'viernes', 6: 'sabado',
+  }
+  const HOY_LABEL: Record<number, string> = {
+    0: 'Domingo', 1: 'Lunes', 2: 'Martes', 3: 'Miércoles',
+    4: 'Jueves', 5: 'Viernes', 6: 'Sábado',
+  }
+  const todayIdx = new Date().getDay()
+  const todayKey = HOY_MAP[todayIdx]
+  const todayLabel = HOY_LABEL[todayIdx]
+  const clasesHoy = todayKey
+    ? (horarioPeriodoActual?.horario.filter(h => h[todayKey] !== null) ?? [])
+    : []
+
   if (loading) {
     return (
       <DashboardShell crumb="Inicio">
@@ -226,37 +240,40 @@ export default function DashboardPage() {
         </div>
 
         <div>
-          {/* Próximas clases */}
+          {/* Mis clases de hoy */}
           <div className="card">
             <div className="card-head">
-              <div><h3>Horario actual</h3></div>
-              <a href="/horarios" className="link">Ver →</a>
+              <div>
+                <h3>Mis clases de hoy</h3>
+                <div className="sub">{todayLabel}</div>
+              </div>
+              <a href="/horarios" className="link">Ver todo →</a>
             </div>
             <div style={{ padding: '4px 0' }}>
-              {horarioPeriodoActual?.horario.slice(0, 4).map(h => {
-                const dias: Record<string, string> = { lunes: 'Lun', martes: 'Mar', miercoles: 'Mié', jueves: 'Jue', viernes: 'Vie', sabado: 'Sáb' }
-                const primerDia = (['lunes', 'martes', 'miercoles', 'jueves', 'viernes'] as const)
-                  .find(d => h[d] !== null)
-                const hora = primerDia ? h[primerDia] : null
-                return (
-                  <div key={h.id_grupo} style={{ padding: '12px 22px', borderBottom: '1px solid var(--line)', display: 'flex', gap: 14, alignItems: 'flex-start' }}>
-                    <div style={{ width: 42, textAlign: 'center' }}>
-                      <div style={{ fontSize: 11, color: 'var(--ink-500)', textTransform: 'uppercase', letterSpacing: '.1em' }}>
-                        {primerDia ? dias[primerDia] : '—'}
+              {clasesHoy.length === 0 ? (
+                <div style={{ padding: '24px 22px', textAlign: 'center', color: 'var(--ink-400)', fontSize: 13 }}>
+                  {!todayKey ? 'Hoy es domingo — sin clases' : 'No tienes clases programadas para hoy'}
+                </div>
+              ) : (
+                clasesHoy.map(h => {
+                  const hora = h[todayKey] as string
+                  const salon = h[`${todayKey}_clave_salon` as keyof typeof h] as string | null
+                  return (
+                    <div key={h.id_grupo} style={{ padding: '12px 22px', borderBottom: '1px solid var(--line)', display: 'flex', gap: 14, alignItems: 'flex-start' }}>
+                      <div style={{ width: 48, textAlign: 'center', flexShrink: 0 }}>
+                        <div style={{ fontFamily: 'Source Serif 4, serif', fontSize: 15, fontWeight: 700, color: 'var(--green-800)', lineHeight: 1.2 }}>
+                          {hora?.split('-')[0]}
+                        </div>
+                        <div style={{ fontSize: 10, color: 'var(--ink-400)', marginTop: 3 }}>{salon ?? '—'}</div>
                       </div>
-                      <div style={{ fontFamily: 'Source Serif 4, serif', fontSize: 16, fontWeight: 600, color: 'var(--green-800)' }}>
-                        {hora?.split('-')[0] ?? '—'}
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontWeight: 600, fontSize: 13 }}>{h.nombre_materia}</div>
+                        <div style={{ fontSize: 12, color: 'var(--ink-500)', marginTop: 2 }}>{h.clave_materia}</div>
                       </div>
                     </div>
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontWeight: 600, fontSize: 13 }}>{h.nombre_materia}</div>
-                      <div style={{ fontSize: 12, color: 'var(--ink-500)', marginTop: 2 }}>
-                        {h.clave_materia} · {primerDia ? h[`${primerDia}_clave_salon` as keyof typeof h] : ''}
-                      </div>
-                    </div>
-                  </div>
-                )
-              })}
+                  )
+                })
+              )}
             </div>
           </div>
 

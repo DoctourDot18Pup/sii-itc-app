@@ -22,6 +22,7 @@ export default function ProyeccionPage() {
   const [periodos, setPeriodos] = useState<CalificacionesPeriodo[]>([])
   const [objetivo, setObjetivo] = useState<number>(85)
   const [notas, setNotas] = useState<Record<string, number | ''>>({})
+  const [modo, setModo] = useState<'simulador' | 'necesito'>('simulador')
 
   useEffect(() => {
     const token = getToken()
@@ -70,6 +71,29 @@ export default function ProyeccionPage() {
       .sort((a, b) => a.diferencia - b.diferencia)
   }, [periodoActual, notas, objetivo, resultado])
 
+  const necesitoData = useMemo(() => {
+    if (!periodoActual) return []
+    return periodoActual.materias.map(m => {
+      const parciales = [1, 2, 3].map(n => {
+        const c = m.calificaiones.find(cc => cc.numero_calificacion === n)
+        const val = c?.calificacion ? Number(c.calificacion) : null
+        return (val !== null && !isNaN(val) && val > 0) ? val : null
+      })
+      const known = parciales.filter((v): v is number => v !== null)
+      const remaining = 3 - known.length
+      const sumKnown = known.reduce((a, b) => a + b, 0)
+      const needed = remaining > 0
+        ? (objetivo * 3 - sumKnown) / remaining
+        : sumKnown / 3
+      const estado = remaining === 0 ? 'terminado' as const
+        : needed <= 0 ? 'seguro' as const
+        : needed > 100 ? 'imposible' as const
+        : needed > 90 ? 'dificil' as const
+        : 'alcanzable' as const
+      return { materia: m.materia, parciales, needed: Math.round(needed * 10) / 10, remaining, estado }
+    })
+  }, [periodoActual, objetivo])
+
   if (loading) {
     return (
       <DashboardShell crumb="Proyección">
@@ -89,7 +113,27 @@ export default function ProyeccionPage() {
         <div>
           <div className="eyebrow">Herramientas · Proyección</div>
           <h1>Proyección de promedio</h1>
-          <p className="sub">Simula tu rendimiento para el cierre del semestre</p>
+          <p className="sub">
+            {modo === 'simulador'
+              ? 'Simula tu rendimiento para el cierre del semestre'
+              : 'Calcula qué calificación necesitas en cada parcial para alcanzar tu objetivo'}
+          </p>
+        </div>
+        <div className="actions">
+          <button
+            className="iconbtn"
+            style={modo === 'simulador' ? { background: 'var(--green-900)', color: '#fff', borderColor: 'var(--green-900)' } : {}}
+            onClick={() => setModo('simulador')}
+          >
+            Simulador
+          </button>
+          <button
+            className="iconbtn"
+            style={modo === 'necesito' ? { background: 'var(--green-900)', color: '#fff', borderColor: 'var(--green-900)' } : {}}
+            onClick={() => setModo('necesito')}
+          >
+            ¿Qué necesito?
+          </button>
         </div>
       </div>
 
@@ -123,55 +167,111 @@ export default function ProyeccionPage() {
             </div>
           </div>
 
-          {/* Materias */}
-          <div className="card">
-            <div className="card-head">
-              <h3>Calificaciones simuladas</h3>
-              <div className="muted" style={{ fontSize: 12 }}>{periodoActual?.periodo.descripcion_periodo}</div>
-            </div>
-            <div style={{ padding: '0 0 8px' }}>
-              {periodoActual?.materias.map(m => {
-                const val = notas[m.materia.clave_materia]
-                const n = typeof val === 'number' ? val : NaN
-                return (
-                  <div key={m.materia.id_grupo} style={{
-                    display: 'flex', alignItems: 'center', gap: 14,
-                    padding: '12px 22px', borderBottom: '1px solid var(--line)',
-                  }}>
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontWeight: 600, fontSize: 13 }}>{m.materia.nombre_materia}</div>
-                      <div className="muted" style={{ fontSize: 12 }}>{m.materia.clave_materia}</div>
+          {/* Simulador: tabla de calificaciones editables */}
+          {modo === 'simulador' && (
+            <div className="card">
+              <div className="card-head">
+                <h3>Calificaciones simuladas</h3>
+                <div className="muted" style={{ fontSize: 12 }}>{periodoActual?.periodo.descripcion_periodo}</div>
+              </div>
+              <div style={{ padding: '0 0 8px' }}>
+                {periodoActual?.materias.map(m => {
+                  const val = notas[m.materia.clave_materia]
+                  const n = typeof val === 'number' ? val : NaN
+                  return (
+                    <div key={m.materia.id_grupo} style={{
+                      display: 'flex', alignItems: 'center', gap: 14,
+                      padding: '12px 22px', borderBottom: '1px solid var(--line)',
+                    }}>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontWeight: 600, fontSize: 13 }}>{m.materia.nombre_materia}</div>
+                        <div className="muted" style={{ fontSize: 12 }}>{m.materia.clave_materia}</div>
+                      </div>
+                      <input
+                        type="number"
+                        min={0} max={100} step={1}
+                        placeholder="—"
+                        value={val === '' ? '' : val}
+                        onChange={e => {
+                          const raw = e.target.value
+                          setNotas(prev => ({
+                            ...prev,
+                            [m.materia.clave_materia]: raw === '' ? '' : Math.min(100, Math.max(0, Number(raw))),
+                          }))
+                        }}
+                        className="sii-input"
+                        style={{ width: 80, textAlign: 'center', padding: '6px 10px' }}
+                      />
+                      {!isNaN(n) && (
+                        <span className={`badge ${colorFor(n)}`} style={{ minWidth: 36, textAlign: 'center' }}>
+                          {n >= 70 ? '✓' : '✗'}
+                        </span>
+                      )}
                     </div>
-                    <input
-                      type="number"
-                      min={0} max={100} step={1}
-                      placeholder="—"
-                      value={val === '' ? '' : val}
-                      onChange={e => {
-                        const raw = e.target.value
-                        setNotas(prev => ({
-                          ...prev,
-                          [m.materia.clave_materia]: raw === '' ? '' : Math.min(100, Math.max(0, Number(raw))),
-                        }))
-                      }}
-                      className="sii-input"
-                      style={{ width: 80, textAlign: 'center', padding: '6px 10px' }}
-                    />
-                    {!isNaN(n) && (
-                      <span className={`badge ${colorFor(n)}`} style={{ minWidth: 36, textAlign: 'center' }}>
-                        {n >= 70 ? '✓' : '✗'}
-                      </span>
-                    )}
-                  </div>
-                )
-              })}
+                  )
+                })}
+              </div>
             </div>
-          </div>
+          )}
+
+          {/* ¿Qué necesito?: tabla con parciales reales y mínimo requerido */}
+          {modo === 'necesito' && (
+            <div className="card" style={{ overflowX: 'auto' }}>
+              <div className="card-head">
+                <h3>¿Qué necesito?</h3>
+                <div className="muted" style={{ fontSize: 12 }}>objetivo: {objetivo}</div>
+              </div>
+              <table className="tbl" style={{ minWidth: 460 }}>
+                <thead>
+                  <tr>
+                    <th>Materia</th>
+                    <th style={{ textAlign: 'center' }}>P1</th>
+                    <th style={{ textAlign: 'center' }}>P2</th>
+                    <th style={{ textAlign: 'center' }}>P3</th>
+                    <th style={{ textAlign: 'right' }}>Necesitas</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {necesitoData.map(d => (
+                    <tr key={d.materia.id_grupo}>
+                      <td>
+                        <b style={{ fontSize: 13 }}>{d.materia.nombre_materia}</b>
+                        <div className="muted" style={{ fontSize: 11 }}>{d.materia.clave_materia}</div>
+                      </td>
+                      {d.parciales.map((v, i) => (
+                        <td key={i} style={{ textAlign: 'center' }}>
+                          {v !== null
+                            ? <span className={`badge ${colorFor(v)}`}>{v}</span>
+                            : <span className="muted">—</span>}
+                        </td>
+                      ))}
+                      <td className="num">
+                        {d.estado === 'terminado' ? (
+                          <span className={`badge ${colorFor(d.needed)}`}>{d.needed.toFixed(0)}</span>
+                        ) : d.estado === 'seguro' ? (
+                          <span className="badge good" style={{ fontSize: 11 }}>Ya pasas</span>
+                        ) : d.estado === 'imposible' ? (
+                          <span className="badge bad" style={{ fontSize: 11 }}>Imposible</span>
+                        ) : (
+                          <span className={`badge ${colorFor(d.needed)}`}>{d.needed.toFixed(0)}</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              <div className="muted" style={{ fontSize: 11, padding: '8px 22px' }}>
+                Promedio de 3 parciales · "Necesitas" = mínimo en parciales pendientes
+              </div>
+            </div>
+          )}
         </div>
 
-        {/* Resultados */}
+        {/* Resultados — cambia según el modo */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          {resultado ? (
+
+          {/* Modo simulador */}
+          {modo === 'simulador' && (resultado ? (
             <>
               <div className="stat dark">
                 <div className="accent"><IcoAward size={14} /></div>
@@ -197,7 +297,6 @@ export default function ProyeccionPage() {
                   <div className="sub">materias por debajo de 70</div>
                 </div>
               )}
-
               {necesitanMejora.length > 0 && (
                 <div className="card card-pad">
                   <h3 style={{ marginBottom: 12, fontSize: 14 }}>Por debajo del objetivo</h3>
@@ -218,7 +317,64 @@ export default function ProyeccionPage() {
               <IcoTarget size={32} style={{ opacity: .3, margin: '12px auto' }} />
               <p style={{ fontSize: 13 }}>Ingresa calificaciones en el simulador para ver la proyección.</p>
             </div>
-          )}
+          ))}
+
+          {/* Modo necesito: resumen de estados */}
+          {modo === 'necesito' && necesitoData.length > 0 && (() => {
+            const seguras    = necesitoData.filter(d => d.estado === 'seguro' || d.estado === 'terminado')
+            const alcanzables = necesitoData.filter(d => d.estado === 'alcanzable')
+            const dificiles  = necesitoData.filter(d => d.estado === 'dificil')
+            const imposibles = necesitoData.filter(d => d.estado === 'imposible')
+            return (
+              <>
+                {seguras.length > 0 && (
+                  <div className="stat" style={{ borderColor: 'var(--green-700)' }}>
+                    <div className="accent" style={{ color: 'var(--green-700)' }}><IcoAward size={14} /></div>
+                    <div className="lbl">Ya aprobadas</div>
+                    <div className="val" style={{ color: 'var(--green-700)' }}>{seguras.length}</div>
+                    <div className="sub">con calificaciones actuales</div>
+                  </div>
+                )}
+                {alcanzables.length > 0 && (
+                  <div className="stat">
+                    <div className="accent"><IcoTarget size={14} /></div>
+                    <div className="lbl">Alcanzables</div>
+                    <div className="val">{alcanzables.length}</div>
+                    <div className="sub">puedes llegar a {objetivo}</div>
+                  </div>
+                )}
+                {dificiles.length > 0 && (
+                  <div className="stat" style={{ borderColor: 'var(--gold-500)' }}>
+                    <div className="accent" style={{ color: 'var(--gold-500)' }}><IcoTarget size={14} /></div>
+                    <div className="lbl">Exigentes</div>
+                    <div className="val" style={{ color: 'var(--gold-500)' }}>{dificiles.length}</div>
+                    <div className="sub">necesitas más de 90</div>
+                  </div>
+                )}
+                {imposibles.length > 0 && (
+                  <div className="stat" style={{ borderColor: 'var(--red)' }}>
+                    <div className="accent" style={{ color: 'var(--red)' }}><IcoTarget size={14} /></div>
+                    <div className="lbl">Imposibles para {objetivo}</div>
+                    <div className="val" style={{ color: 'var(--red)' }}>{imposibles.length}</div>
+                    <div className="sub">baja el objetivo o enfócate en pasar</div>
+                  </div>
+                )}
+                {(dificiles.length > 0 || imposibles.length > 0) && (
+                  <div className="card card-pad">
+                    <h3 style={{ marginBottom: 10, fontSize: 14 }}>Requieren atención</h3>
+                    {[...dificiles, ...imposibles].map(d => (
+                      <div key={d.materia.id_grupo} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '7px 0', borderBottom: '1px solid var(--line)' }}>
+                        <div style={{ fontSize: 12, fontWeight: 600 }}>{d.materia.nombre_materia}</div>
+                        <span className={`badge ${d.estado === 'imposible' ? 'bad' : 'warn'}`} style={{ fontSize: 11 }}>
+                          {d.estado === 'imposible' ? 'Imposible' : `${d.needed.toFixed(0)} pts`}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </>
+            )
+          })()}
         </div>
       </div>
       {/* Calculadora de titulación */}
