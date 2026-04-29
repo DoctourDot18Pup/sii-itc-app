@@ -22,7 +22,7 @@ export const EVENTOS_ACADEMICOS: EventoAcademico[] = [
   { id: 'ac-08', titulo: 'Baja Temporal (Licenciatura y Posgrado)', fecha_inicio: '2026-01-26', fecha_fin: '2026-03-02', categoria: 'academico', importante: false },
   { id: 'ac-09', titulo: 'Recepción de solicitudes traslados y movilidad', fecha_inicio: '2026-02-03', fecha_fin: '2026-05-28', categoria: 'academico', importante: false },
   { id: 'ac-10', titulo: 'Oficialización de matrículas y cargas académicas', fecha_inicio: '2026-02-27', categoria: 'academico', importante: false },
-  { id: 'ac-11', titulo: 'Evaluación Docente', fecha_inicio: '2026-05-04', fecha_fin: '2026-05-29', categoria: 'academico', importante: false },
+  { id: 'ac-11', titulo: 'Evaluación Docente', fecha_inicio: '2026-05-22', fecha_fin: '2026-05-29', categoria: 'academico', importante: false },
   { id: 'ac-12', titulo: 'Fin de cursos (Licenciatura y Posgrado)', fecha_inicio: '2026-05-29', categoria: 'academico', importante: true },
 
   // ── EVALUACIONES (PARCIALES) ────────────────────────────────────────────────

@@ -28,6 +28,7 @@ export default function CalendarioPage() {
   const { student: studentCtx } = useStudent()
   const [numeroControl, setNumeroControl] = useState<string | null>(null)
   const [emailEstudiante, setEmailEstudiante] = useState<string>('')
+  const [nombreEstudiante, setNombreEstudiante] = useState<string>('')
   const [eventosPersonales, setEventosPersonales] = useState<CalendarioEvento[]>([])
   const [hoy] = useState(new Date())
   const [mes, setMes] = useState(hoy.getMonth())
@@ -47,12 +48,15 @@ export default function CalendarioPage() {
   const [savingNotif, setSavingNotif] = useState(false)
   const [notifGuardado, setNotifGuardado] = useState(false)
   const [diaDetalle, setDiaDetalle] = useState<number | null>(null)
+  const [errorEvento, setErrorEvento] = useState<string | null>(null)
+  const [errorCarga, setErrorCarga] = useState(false)
 
   // Usar datos del contexto si ya están disponibles
   useEffect(() => {
     if (studentCtx) {
       setNumeroControl(studentCtx.numero_control)
       setEmailEstudiante(studentCtx.email)
+      setNombreEstudiante(studentCtx.persona)
       return
     }
     const token = getToken()
@@ -60,6 +64,7 @@ export default function CalendarioPage() {
     getEstudiante(token).then(est => {
       setNumeroControl(est.numero_control)
       setEmailEstudiante(est.email)
+      setNombreEstudiante(est.persona)
     }).catch(console.error)
   }, [router, studentCtx])
 
@@ -77,7 +82,8 @@ export default function CalendarioPage() {
         .select('*')
         .eq('numero_control', numeroControl)
         .maybeSingle(),
-    ]).then(([{ data: evs }, { data: cfg }]) => {
+    ]).then(([{ data: evs, error: errEvs }, { data: cfg }]) => {
+      if (errEvs) { setErrorCarga(true); return }
       if (evs) setEventosPersonales(evs as CalendarioEvento[])
       if (cfg) {
         setNotifConfig({
@@ -86,7 +92,7 @@ export default function CalendarioPage() {
           categorias: cfg.categorias as CategoriaEvento[],
         })
       }
-    }).catch(console.error)
+    }).catch(() => setErrorCarga(true))
   }, [numeroControl])
 
   // Grid del mes
@@ -153,23 +159,30 @@ export default function CalendarioPage() {
   async function guardarEvento() {
     if (!formEvento.titulo.trim() || !diaSeleccionado || !numeroControl) return
     setSaving(true)
+    setErrorEvento(null)
     const insert: CalendarioEventoInsert = {
       titulo: formEvento.titulo.trim(),
       descripcion: formEvento.descripcion.trim() || undefined,
-      fecha_inicio: `${isoFecha(diaSeleccionado.getDate())}T08:00:00`,
+      fecha_inicio: `${isoFecha(diaSeleccionado.getDate())}T08:00:00-06:00`,
       numero_control: numeroControl,
     }
     const { data, error } = await supabase.from('calendario_eventos').insert(insert).select().single()
     if (!error && data) {
       setEventosPersonales(prev => [...prev, data as CalendarioEvento].sort((a,b) => a.fecha_inicio.localeCompare(b.fecha_inicio)))
       setModal(false)
+    } else {
+      setErrorEvento(
+        error?.message?.includes('401') || error?.message?.includes('Unauthorized')
+          ? 'Sin conexión con Supabase — verifica las variables de entorno en Vercel.'
+          : 'No se pudo guardar el evento. Intenta de nuevo.'
+      )
     }
     setSaving(false)
   }
 
   async function eliminarEvento(id: string) {
-    await supabase.from('calendario_eventos').delete().eq('id', id)
-    setEventosPersonales(prev => prev.filter(e => e.id !== id))
+    const { error } = await supabase.from('calendario_eventos').delete().eq('id', id)
+    if (!error) setEventosPersonales(prev => prev.filter(e => e.id !== id))
   }
 
   async function guardarNotifConfig() {
@@ -178,6 +191,7 @@ export default function CalendarioPage() {
     await supabase.from('notificaciones_config').upsert({
       numero_control: numeroControl,
       email: emailEstudiante,
+      nombre: nombreEstudiante,
       activo: notifConfig.activo,
       dias_anticipacion: notifConfig.dias_anticipacion,
       categorias: notifConfig.categorias,
@@ -194,6 +208,16 @@ export default function CalendarioPage() {
 
   return (
     <DashboardShell crumb="Calendario">
+      {errorCarga && (
+        <div style={{
+          margin: '0 0 16px', padding: '12px 16px', borderRadius: 10,
+          background: 'rgba(220,38,38,.07)', border: '1px solid rgba(220,38,38,.3)',
+          fontSize: 13, color: '#991b1b', display: 'flex', gap: 10, alignItems: 'center',
+        }}>
+          <span style={{ fontWeight: 700 }}>⚠ Sin conexión con Supabase</span>
+          — Los eventos personales no están disponibles. Verifica que <code>NEXT_PUBLIC_SUPABASE_URL</code> y <code>NEXT_PUBLIC_SUPABASE_ANON_KEY</code> estén configuradas en Vercel y haz un redeploy.
+        </div>
+      )}
       <div className="pagehead">
         <div>
           <div className="eyebrow">Académico · Calendario</div>
@@ -505,6 +529,11 @@ export default function CalendarioPage() {
               <label style={{ fontSize: 12, fontWeight: 600, display: 'block', marginBottom: 5 }}>Descripción (opcional)</label>
               <input className="sii-input" placeholder="Notas adicionales…" value={formEvento.descripcion} onChange={e => setFormEvento(f => ({ ...f, descripcion: e.target.value }))} />
             </div>
+            {errorEvento && (
+              <div style={{ marginBottom: 12, padding: '10px 12px', borderRadius: 8, background: 'rgba(220,38,38,.07)', border: '1px solid rgba(220,38,38,.3)', fontSize: 12, color: '#991b1b' }}>
+                {errorEvento}
+              </div>
+            )}
             <button className="btn btn-primary" style={{ width: '100%' }} disabled={saving || !formEvento.titulo.trim()} onClick={guardarEvento}>
               {saving ? <span className="sii-spinner" /> : 'Guardar evento'}
             </button>
